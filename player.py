@@ -20,19 +20,26 @@ from constants import (
     POWERUP_SPEED_MULTIPLIER,
     POWERUP_SHIELD,
     POWERUP_SPEED,
+    POWERUP_BOMB,
+    BOMB_RADIUS,
+    BOMB_SPEED,
+    BOMB_COOLDOWN_SECONDS,
 )
 from shot import Shot
+from bomb import Bomb
 
 class Player(CircleShape):
     def __init__(self, x, y):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0
         self.shoot_cooldown_timer = 0
+        self.bomb_cooldown_timer = 0
         self.velocity = pygame.Vector2(0, 0)
         self.weapon_type = WEAPON_DEFAULT
         self.shield_active = False
         self.shield_timer = 0
         self.speed_boost_timer = 0
+        self.bomb_count = 1
 
     def triangle(self):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
@@ -100,13 +107,6 @@ class Player(CircleShape):
         else:
             self.velocity.scale_to_length(speed - friction)
 
-    def apply_powerup(self, powerup_type):
-        if powerup_type == POWERUP_SHIELD:
-            self.shield_active = True
-            self.shield_timer = POWERUP_DURATION
-        elif powerup_type == POWERUP_SPEED:
-            self.speed_boost_timer = POWERUP_DURATION
-
     def update_powerups(self, dt):
         if self.shield_active:
             self.shield_timer = max(self.shield_timer - dt, 0)
@@ -117,6 +117,20 @@ class Player(CircleShape):
 
     def select_weapon(self, weapon_type):
         self.weapon_type = weapon_type
+
+    def drop_bomb(self):
+        direction = pygame.Vector2(0, 1).rotate(self.rotation)
+        bomb = Bomb(self.position.x, self.position.y, BOMB_RADIUS)
+        bomb.velocity = direction * BOMB_SPEED
+
+    def apply_powerup(self, powerup_type):
+        if powerup_type == POWERUP_SHIELD:
+            self.shield_active = True
+            self.shield_timer = POWERUP_DURATION
+        elif powerup_type == POWERUP_SPEED:
+            self.speed_boost_timer = POWERUP_DURATION
+        elif powerup_type == POWERUP_BOMB:
+            self.bomb_count += 1
 
     def shoot(self):
         settings = WEAPON_SETTINGS[self.weapon_type]
@@ -164,6 +178,13 @@ class Player(CircleShape):
         if keys[pygame.K_SPACE] and self.shoot_cooldown_timer <= 0:
             self.shoot_cooldown_timer = WEAPON_SETTINGS[self.weapon_type]["cooldown"]
             self.shoot()
+
+        if keys[pygame.K_b] and self.bomb_count > 0 and self.bomb_cooldown_timer <= 0:
+            self.bomb_cooldown_timer = BOMB_COOLDOWN_SECONDS
+            self.bomb_count -= 1
+            self.drop_bomb()
+
+        self.bomb_cooldown_timer = max(self.bomb_cooldown_timer - dt, 0)
 
     def draw(self, screen):
         if self.shield_active:

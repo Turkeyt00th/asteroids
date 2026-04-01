@@ -4,9 +4,10 @@ from constants import LINE_WIDTH, EXPLOSION_LIFETIME, EXPLOSION_MAX_RADIUS
 
 
 class Explosion(CircleShape):
-    def __init__(self, x, y):
+    def __init__(self, x, y, max_radius=EXPLOSION_MAX_RADIUS):
         super().__init__(x, y, 0)
         self.age = 0.0
+        self.max_radius = max_radius
 
     def draw(self, screen):
         if self.radius > 0:
@@ -18,4 +19,4 @@ class Explosion(CircleShape):
             self.kill()
             return
 
-        self.radius = (self.age / EXPLOSION_LIFETIME) * EXPLOSION_MAX_RADIUS
+        self.radius = (self.age / EXPLOSION_LIFETIME) * self.max_radius

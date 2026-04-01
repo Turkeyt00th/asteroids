@@ -3,13 +3,14 @@ from circleshape import CircleShape
 from constants import LINE_WIDTH, SCREEN_WIDTH, SCREEN_HEIGHT
 
 
-class Shot(CircleShape):
-    def __init__(self, x, y, radius, damage=1):
+class Bomb(CircleShape):
+    def __init__(self, x, y, radius):
         super().__init__(x, y, radius)
-        self.damage = damage
 
     def draw(self, screen):
-        pygame.draw.circle(screen, "white", self.position, self.radius, LINE_WIDTH)
+        pygame.draw.circle(screen, "red", self.position, self.radius, LINE_WIDTH)
+        inner_radius = max(1, self.radius - 3)
+        pygame.draw.circle(screen, "orange", self.position, inner_radius, 0)
 
     def update(self, dt):
         self.position += self.velocity * dt

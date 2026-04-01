@@ -11,12 +11,14 @@ from constants import (
     SCORE_PER_ASTEROID,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
+    BOMB_EXPLOSION_RADIUS,
 )
 from logger import log_event, log_state
 from player import Player
 from asteroid import Asteroid
 from asteroidfield import AsteroidField
 from shot import Shot
+from bomb import Bomb
 from powerup import PowerUp
 from explosion import Explosion
 
@@ -74,6 +76,7 @@ def main():
     powerups = pygame.sprite.Group()
     Player.containers = (updatable, drawable)
     Shot.containers = (shots, updatable, drawable)
+    Bomb.containers = (shots, updatable, drawable)
     Asteroid.containers = (asteroids, updatable, drawable)
     PowerUp.containers = (powerups, updatable, drawable)
     AsteroidField.containers = (updatable,)
@@ -97,7 +100,7 @@ def main():
             for j in range(i + 1, len(asteroid_list)):
                 asteroid_list[i].bounce_off(asteroid_list[j])
 
-        for asteroid in asteroids:
+        for asteroid in list(asteroids):
             if player.collides_with(asteroid):
                 log_event("player_hit")
                 lives -= 1
@@ -109,13 +112,23 @@ def main():
                 player.shoot_cooldown_timer = 0
                 break
 
-        for asteroid in asteroids:
-            for shot in shots:
+        for asteroid in list(asteroids):
+            for shot in list(shots):
                 if asteroid.collides_with(shot):
-                    log_event("asteroid_shot")
-                    score += SCORE_PER_ASTEROID
-                    asteroid.split()
-                    shot.kill()
+                    if isinstance(shot, Bomb):
+                        log_event("bomb_explode")
+                        shot.kill()
+                        Explosion(shot.position.x, shot.position.y, BOMB_EXPLOSION_RADIUS)
+                        for blast_asteroid in list(asteroids):
+                            if blast_asteroid.position.distance_to(shot.position) <= BOMB_EXPLOSION_RADIUS:
+                                score += SCORE_PER_ASTEROID
+                                blast_asteroid.kill()
+                    else:
+                        log_event("asteroid_shot")
+                        score += SCORE_PER_ASTEROID
+                        asteroid.split()
+                        shot.kill()
+                    break
 
         for powerup in list(powerups):
             if player.collides_with(powerup):
@@ -140,10 +153,12 @@ def main():
             f"Speed Boost: {round(player.speed_boost_timer, 1)}", True, "white"
         )
         screen.blit(speed_surface, (10, 130))
+        bombs_surface = font.render(f"Bombs: {player.bomb_count}", True, "white")
+        screen.blit(bombs_surface, (10, 160))
         difficulty_surface = font.render(
             f"Difficulty: {DIFFICULTY_NAMES[difficulty]}", True, "white"
         )
-        screen.blit(difficulty_surface, (10, 160))
+        screen.blit(difficulty_surface, (10, 190))
         pygame.display.flip()
 
         dt = clock.tick(60) / 1000
