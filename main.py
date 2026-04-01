@@ -44,6 +44,11 @@ def main():
         screen.fill("black")
         updatable.update(dt)
 
+        asteroid_list = list(asteroids)
+        for i in range(len(asteroid_list)):
+            for j in range(i + 1, len(asteroid_list)):
+                asteroid_list[i].bounce_off(asteroid_list[j])
+
         for asteroid in asteroids:
             if asteroid.collides_with(player):
                 log_event("player_hit")
