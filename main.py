@@ -71,6 +71,8 @@ def main():
         screen.blit(score_surface, (10, 10))
         lives_surface = font.render(f"Lives: {lives}", True, "white")
         screen.blit(lives_surface, (10, 40))
+        weapon_surface = font.render(f"Weapon: {player.weapon_type}", True, "white")
+        screen.blit(weapon_surface, (10, 70))
         pygame.display.flip()
 
         dt = clock.tick(60) / 1000

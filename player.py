@@ -1,6 +1,22 @@
 import pygame
 from circleshape import CircleShape
-from constants import PLAYER_RADIUS, LINE_WIDTH, PLAYER_TURN_SPEED, PLAYER_SPEED, PLAYER_ACCELERATION, PLAYER_FRICTION, SHOT_RADIUS, PLAYER_SHOOT_SPEED, PLAYER_SHOOT_COOLDOWN_SECONDS
+from constants import (
+    PLAYER_RADIUS,
+    LINE_WIDTH,
+    PLAYER_TURN_SPEED,
+    PLAYER_SPEED,
+    PLAYER_ACCELERATION,
+    PLAYER_FRICTION,
+    SHOT_RADIUS,
+    PLAYER_SHOOT_SPEED,
+    PLAYER_SHOOT_COOLDOWN_SECONDS,
+    WEAPON_DEFAULT,
+    WEAPON_SETTINGS,
+    WEAPON_NORMAL,
+    WEAPON_SPREAD,
+    WEAPON_HEAVY,
+    WEAPON_RAPID,
+)
 from shot import Shot
 
 class Player(CircleShape):
@@ -9,6 +25,7 @@ class Player(CircleShape):
         self.rotation = 0
         self.shoot_cooldown_timer = 0
         self.velocity = pygame.Vector2(0, 0)
+        self.weapon_type = WEAPON_DEFAULT
 
     def triangle(self):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
@@ -38,13 +55,36 @@ class Player(CircleShape):
         else:
             self.velocity.scale_to_length(speed - friction)
 
+    def select_weapon(self, weapon_type):
+        self.weapon_type = weapon_type
+
     def shoot(self):
-        shot = Shot(self.position.x, self.position.y, SHOT_RADIUS)
-        shot.velocity = pygame.Vector2(0, 1).rotate(self.rotation) * PLAYER_SHOOT_SPEED
+        settings = WEAPON_SETTINGS[self.weapon_type]
+        for i in range(settings["count"]):
+            angle = 0
+            if settings["count"] > 1:
+                angle = -settings["spread"] * (settings["count"] - 1) / 2 + i * settings["spread"]
+            direction = pygame.Vector2(0, 1).rotate(self.rotation + angle)
+            shot = Shot(
+                self.position.x,
+                self.position.y,
+                settings["radius"],
+                settings["damage"],
+            )
+            shot.velocity = direction * settings["speed"]
 
     def update(self, dt):
         self.shoot_cooldown_timer = max(self.shoot_cooldown_timer - dt, 0)
         keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_1]:
+            self.select_weapon(WEAPON_NORMAL)
+        if keys[pygame.K_2]:
+            self.select_weapon(WEAPON_SPREAD)
+        if keys[pygame.K_3]:
+            self.select_weapon(WEAPON_HEAVY)
+        if keys[pygame.K_4]:
+            self.select_weapon(WEAPON_RAPID)
 
         if keys[pygame.K_a]:
             self.rotate(-dt)
@@ -58,9 +98,10 @@ class Player(CircleShape):
             self.apply_friction(dt)
 
         self.position += self.velocity * dt
+        self.wrap()
 
         if keys[pygame.K_SPACE] and self.shoot_cooldown_timer <= 0:
-            self.shoot_cooldown_timer = PLAYER_SHOOT_COOLDOWN_SECONDS
+            self.shoot_cooldown_timer = WEAPON_SETTINGS[self.weapon_type]["cooldown"]
             self.shoot()
 
     def draw(self, screen):
