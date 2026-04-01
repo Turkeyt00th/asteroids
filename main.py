@@ -1,7 +1,17 @@
 import sys
 
 import pygame
-from constants import SCREEN_WIDTH, SCREEN_HEIGHT, SCORE_PER_ASTEROID, PLAYER_LIVES
+from constants import (
+    DIFFICULTY_EASY,
+    DIFFICULTY_EXTREME,
+    DIFFICULTY_HARD,
+    DIFFICULTY_MEDIUM,
+    DIFFICULTY_NAMES,
+    PLAYER_LIVES,
+    SCORE_PER_ASTEROID,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+)
 from logger import log_event, log_state
 from player import Player
 from asteroid import Asteroid
@@ -11,14 +21,49 @@ from powerup import PowerUp
 from explosion import Explosion
 
 
+def choose_difficulty(screen, font):
+    instructions = [
+        "Choose difficulty before starting:",
+        "1 - Easy",
+        "2 - Medium",
+        "3 - Hard",
+        "4 - Extreme",
+        "Press 1, 2, 3 or 4",
+    ]
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    return DIFFICULTY_EASY
+                if event.key == pygame.K_2:
+                    return DIFFICULTY_MEDIUM
+                if event.key == pygame.K_3:
+                    return DIFFICULTY_HARD
+                if event.key == pygame.K_4:
+                    return DIFFICULTY_EXTREME
+
+        screen.fill("black")
+        for i, line in enumerate(instructions):
+            surface = font.render(line, True, "white")
+            screen.blit(surface, (50, 150 + i * 40))
+
+        pygame.display.flip()
+        pygame.time.delay(50)
+
+
 def main():
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     font = pygame.font.Font(None, 36)
 
     print("Starting Asteroids with pygame version:", pygame.version.ver)
-    print("Screen width:",SCREEN_WIDTH)
-    print("Screen height:",SCREEN_HEIGHT)
+    print("Screen width:", SCREEN_WIDTH)
+    print("Screen height:", SCREEN_HEIGHT)
+
+    difficulty = choose_difficulty(screen, font)
+    print("Selected difficulty:", DIFFICULTY_NAMES[difficulty])
 
     score = 0
     lives = PLAYER_LIVES
@@ -37,7 +82,7 @@ def main():
     clock = pygame.time.Clock()
     dt = 0
     player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-    asteroid_field = AsteroidField()
+    asteroid_field = AsteroidField(difficulty)
 
     while True:
         log_state()
@@ -95,6 +140,10 @@ def main():
             f"Speed Boost: {round(player.speed_boost_timer, 1)}", True, "white"
         )
         screen.blit(speed_surface, (10, 130))
+        difficulty_surface = font.render(
+            f"Difficulty: {DIFFICULTY_NAMES[difficulty]}", True, "white"
+        )
+        screen.blit(difficulty_surface, (10, 160))
         pygame.display.flip()
 
         dt = clock.tick(60) / 1000

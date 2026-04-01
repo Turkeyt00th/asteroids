@@ -66,3 +66,40 @@ WEAPON_SETTINGS = {
 SCORE_PER_ASTEROID = 100
 EXPLOSION_LIFETIME = 0.3
 EXPLOSION_MAX_RADIUS = 40
+
+DIFFICULTY_EASY = 1
+DIFFICULTY_MEDIUM = 2
+DIFFICULTY_HARD = 3
+DIFFICULTY_EXTREME = 4
+DIFFICULTY_NAMES = {
+    DIFFICULTY_EASY: "Easy",
+    DIFFICULTY_MEDIUM: "Medium",
+    DIFFICULTY_HARD: "Hard",
+    DIFFICULTY_EXTREME: "Extreme",
+}
+DIFFICULTY_SETTINGS = {
+    DIFFICULTY_EASY: {
+        "spawn_rate": 1.2,
+        "speed_min": 40,
+        "speed_max": 70,
+        "initial_asteroids": 3,
+    },
+    DIFFICULTY_MEDIUM: {
+        "spawn_rate": 0.8,
+        "speed_min": 50,
+        "speed_max": 90,
+        "initial_asteroids": 5,
+    },
+    DIFFICULTY_HARD: {
+        "spawn_rate": 0.6,
+        "speed_min": 70,
+        "speed_max": 110,
+        "initial_asteroids": 7,
+    },
+    DIFFICULTY_EXTREME: {
+        "spawn_rate": 0.4,
+        "speed_min": 90,
+        "speed_max": 140,
+        "initial_asteroids": 10,
+    },
+}
