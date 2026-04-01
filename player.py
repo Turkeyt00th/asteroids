@@ -16,6 +16,10 @@ from constants import (
     WEAPON_SPREAD,
     WEAPON_HEAVY,
     WEAPON_RAPID,
+    POWERUP_DURATION,
+    POWERUP_SPEED_MULTIPLIER,
+    POWERUP_SHIELD,
+    POWERUP_SPEED,
 )
 from shot import Shot
 
@@ -26,6 +30,9 @@ class Player(CircleShape):
         self.shoot_cooldown_timer = 0
         self.velocity = pygame.Vector2(0, 0)
         self.weapon_type = WEAPON_DEFAULT
+        self.shield_active = False
+        self.shield_timer = 0
+        self.speed_boost_timer = 0
 
     def triangle(self):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
@@ -35,14 +42,52 @@ class Player(CircleShape):
         c = self.position - forward * self.radius + right
         return [a, b, c]
 
+    def collides_with(self, other):
+        circle_center = other.position
+        circle_radius = other.radius
+        triangle = self.triangle()
+
+        if self._point_in_triangle(circle_center, triangle):
+            return True
+
+        for i in range(3):
+            a = triangle[i]
+            b = triangle[(i + 1) % 3]
+            if self._distance_point_to_segment(circle_center, a, b) <= circle_radius:
+                return True
+
+        return False
+
+    def _point_in_triangle(self, point, triangle):
+        a, b, c = triangle
+
+        def sign(p1, p2, p3):
+            return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
+
+        b1 = sign(point, a, b) < 0.0
+        b2 = sign(point, b, c) < 0.0
+        b3 = sign(point, c, a) < 0.0
+        return (b1 == b2) and (b2 == b3)
+
+    def _distance_point_to_segment(self, point, a, b):
+        ab = b - a
+        t = (point - a).dot(ab)
+        ab_len_sq = ab.length_squared()
+        if ab_len_sq != 0:
+            t /= ab_len_sq
+        t = max(0, min(1, t))
+        closest = a + ab * t
+        return point.distance_to(closest)
+
     def rotate(self, dt):
         self.rotation += PLAYER_TURN_SPEED * dt
 
     def move(self, dt):
         direction = pygame.Vector2(0, 1).rotate(self.rotation)
         self.velocity += direction * PLAYER_ACCELERATION * dt
-        if self.velocity.length() > PLAYER_SPEED:
-            self.velocity.scale_to_length(PLAYER_SPEED)
+        max_speed = PLAYER_SPEED * (POWERUP_SPEED_MULTIPLIER if self.speed_boost_timer > 0 else 1)
+        if self.velocity.length() > max_speed:
+            self.velocity.scale_to_length(max_speed)
 
     def apply_friction(self, dt):
         if self.velocity.length_squared() == 0:
@@ -54,6 +99,21 @@ class Player(CircleShape):
             self.velocity = pygame.Vector2(0, 0)
         else:
             self.velocity.scale_to_length(speed - friction)
+
+    def apply_powerup(self, powerup_type):
+        if powerup_type == POWERUP_SHIELD:
+            self.shield_active = True
+            self.shield_timer = POWERUP_DURATION
+        elif powerup_type == POWERUP_SPEED:
+            self.speed_boost_timer = POWERUP_DURATION
+
+    def update_powerups(self, dt):
+        if self.shield_active:
+            self.shield_timer = max(self.shield_timer - dt, 0)
+            if self.shield_timer <= 0:
+                self.shield_active = False
+
+        self.speed_boost_timer = max(self.speed_boost_timer - dt, 0)
 
     def select_weapon(self, weapon_type):
         self.weapon_type = weapon_type
@@ -75,6 +135,7 @@ class Player(CircleShape):
 
     def update(self, dt):
         self.shoot_cooldown_timer = max(self.shoot_cooldown_timer - dt, 0)
+        self.update_powerups(dt)
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_1]:
@@ -105,4 +166,6 @@ class Player(CircleShape):
             self.shoot()
 
     def draw(self, screen):
+        if self.shield_active:
+            pygame.draw.circle(screen, "cyan", self.position, self.radius + 6, 1)
         pygame.draw.polygon(screen, "white", self.triangle(), LINE_WIDTH)

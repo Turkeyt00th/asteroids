@@ -1,9 +1,10 @@
 import pygame
 import random
 from circleshape import CircleShape
-from constants import LINE_WIDTH, ASTEROID_MIN_RADIUS
+from constants import LINE_WIDTH, ASTEROID_MIN_RADIUS, POWERUP_TYPES, POWERUP_SPAWN_CHANCE
 from explosion import Explosion
 from logger import log_event
+from powerup import PowerUp
 
 
 class Asteroid(CircleShape):
@@ -57,6 +58,9 @@ class Asteroid(CircleShape):
     def split(self):
         Explosion(self.position.x, self.position.y)
         self.kill()
+
+        if random.random() < POWERUP_SPAWN_CHANCE:
+            PowerUp(self.position.x, self.position.y, random.choice(POWERUP_TYPES))
 
         if self.radius <= ASTEROID_MIN_RADIUS:
             return
